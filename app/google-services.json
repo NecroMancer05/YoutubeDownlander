@@ -1,0 +1,55 @@
+{
+  "project_info": {
+    "project_number": "571601819403",
+    "firebase_url": "https://downlander-3d78d.firebaseio.com",
+    "project_id": "downlander-3d78d",
+    "storage_bucket": "downlander-3d78d.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:571601819403:android:91e237adb58116e8",
+        "android_client_info": {
+          "package_name": "com.bekircan.youtubedownlander"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "571601819403-igge0nutbam7f3jpn4uha2d1ra09a391.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.bekircan.youtubedownlander",
+            "certificate_hash": "a96184e31b52efea4a134c628a8d07a87b32ef6d"
+          }
+        },
+        {
+          "client_id": "571601819403-jhb7c6le8hjovla1ds1gvi02qe7srteu.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyB3yOAGJpyw1OTbmJXJUOb67mpCt9OBRnU"
+        }
+      ],
+      "services": {
+        "analytics_service": {
+          "status": 1
+        },
+        "appinvite_service": {
+          "status": 2,
+          "other_platform_oauth_client": [
+            {
+              "client_id": "571601819403-jhb7c6le8hjovla1ds1gvi02qe7srteu.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        },
+        "ads_service": {
+          "status": 2
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
