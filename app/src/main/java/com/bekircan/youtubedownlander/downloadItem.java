@@ -23,15 +23,16 @@ public class downloadItem {
     private String fileQuality;
     @Expose
     private String filePath;
-    @Expose
+
     private downloadListener downloadListener;
     private String downPath;
 
+    private boolean isPaused;
+
     //TODO downloader causes overflow is there any loop ?
-    @Expose
     private Downloader downloader;
 
-    public downloadItem(int id, long downStatus, String fileUrl, String fileSize, String fileType, String fileQuality, String downPath, downloadListener downloadListener) {
+    public downloadItem(int id, long downStatus, String fileUrl, String fileSize, String fileType, String fileQuality, String downPath, boolean isPaused, downloadListener downloadListener) {
         this.id = id;
         this.downStatus = downStatus;
         this.FileUrl = fileUrl;
@@ -39,7 +40,16 @@ public class downloadItem {
         this.fileType = fileType;
         this.fileQuality = fileQuality;
         this.downPath = downPath;
+        this.isPaused = isPaused;
         this.downloadListener = downloadListener;
+    }
+
+    public boolean isPaused() {
+        return isPaused;
+    }
+
+    public void setPaused(boolean paused) {
+        isPaused = paused;
     }
 
     public int getId() {
@@ -130,8 +140,8 @@ public class downloadItem {
         downloader.start();
     }
 
-    public void update(downloadListener newListenr){
-        downloader.updatePref(newListenr);
+    public void update(downloadListener newListener){
+        downloader.updatePref(newListener);
     }
 
     public void stop(){

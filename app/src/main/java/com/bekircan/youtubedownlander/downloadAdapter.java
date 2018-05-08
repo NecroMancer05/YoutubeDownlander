@@ -1,7 +1,10 @@
 package com.bekircan.youtubedownlander;
 
+import android.os.Build;
 import android.support.annotation.NonNull;
+import android.support.annotation.RequiresApi;
 import android.support.v7.widget.RecyclerView;
+import android.util.Log;
 import android.view.ContextMenu;
 import android.view.LayoutInflater;
 import android.view.Menu;
@@ -62,30 +65,39 @@ public class downloadAdapter extends RecyclerView.Adapter<downloadAdapter.viewHo
 
                 if (paused){
                     paused = false;
-                    //notifyDataSetChanged();
-
+                    notifyDataSetChanged();
+                    downloadItems.get(position).setPaused(false);
                 }else {
                     paused = true;
                     notifyDataSetChanged();
+                    downloadItems.get(position).pause();
+                    downloadItems.get(position).setPaused(true);
                 }
-                downloadItems.get(position).pause();
             }
 
             @Override
             public void onRemove(int position) {
+
                 itemDeleted.deleted(position,(int) downloadItems.get(position).getDownStatus());
+
                 if (downloadItems.get(position).getDownStatus() != 100){
                     downloadItems.get(position).stop();
                 }
+
                 downloadItems.remove(position);
+                refreshIDs();
                 notifyDataSetChanged();
             }
 
             @Override
             public void onStop(int position) {
 
-                downloadItems.get(position).stop();
-                onDelete(position);
+                if (downloadItems.get(position).getDownStatus() != 100){
+                    downloadItems.get(position).stop();
+                    onDelete(position);
+                }else {
+                   onRemove(position);
+                }
             }
 
         });
@@ -93,7 +105,7 @@ public class downloadAdapter extends RecyclerView.Adapter<downloadAdapter.viewHo
         //TODO https://stackoverflow.com/questions/8049620/how-to-set-layout-gravity-programmatically
         if (downloadItems.get(position).getDownStatus() >= 100){
             holder.downProgress.setVisibility(View.GONE);
-            holder.fileStatus.setText("Donwload Finished");
+            holder.fileStatus.setText("Download Finished");
         }else{
             holder.downProgress.setVisibility(View.VISIBLE);
         }
@@ -102,10 +114,18 @@ public class downloadAdapter extends RecyclerView.Adapter<downloadAdapter.viewHo
             holder.fileStatus.setText("Pending...");
         }
 
-        if (paused){
+        if (downloadItems.get(position).isPaused()){
             holder.fileStatus.setText("Paused");
         }
 
+    }
+
+    private void refreshIDs() {
+
+        int ids = 0;
+        for (downloadItem item : downloadItems){
+            item.setId(ids);
+        }
     }
 
     @Override
@@ -127,7 +147,6 @@ public class downloadAdapter extends RecyclerView.Adapter<downloadAdapter.viewHo
         private ProgressBar downProgress;
         //TODO put img view
         private ImageView fileImg;
-
 
 
 
@@ -187,20 +206,34 @@ public class downloadAdapter extends RecyclerView.Adapter<downloadAdapter.viewHo
         }
         */
 
+        @RequiresApi(api = Build.VERSION_CODES.JELLY_BEAN_MR2)
         @Override
         public void onCreateContextMenu(ContextMenu menu, View v, ContextMenu.ContextMenuInfo menuInfo) {
 
             menu.setHeaderTitle("Select Action");
 
-            MenuItem pause = menu.add(Menu.NONE, 1, 1, "Pause&Resume");
-            MenuItem stop = menu.add(Menu.NONE, 2, 2, "Stop");
+            if (downloadItems.get(getAdapterPosition()).getDownStatus() != 100){
+
+                MenuItem pause;
+
+                if (downloadItems.get(getAdapterPosition()).isPaused()){
+                    pause = menu.add(Menu.NONE, 1, 1, "Resume");
+                }else {
+                    pause = menu.add(Menu.NONE, 1, 1, "Pause");
+                }
+
+                MenuItem stop = menu.add(Menu.NONE, 2, 2, "Stop");
+                pause.setOnMenuItemClickListener(this);
+                stop.setOnMenuItemClickListener(this);
+            }
+
             MenuItem remove = menu.add(Menu.NONE, 3 , 3, "Remove from list");
             MenuItem delete = menu.add(Menu.NONE, 4, 4, "Delete");
 
-            pause.setOnMenuItemClickListener(this);
-            stop.setOnMenuItemClickListener(this);
             remove.setOnMenuItemClickListener(this);
             delete.setOnMenuItemClickListener(this);
+
+            Log.d("menu", "id : " + getAdapterPosition());
         }
 
 
@@ -210,6 +243,7 @@ public class downloadAdapter extends RecyclerView.Adapter<downloadAdapter.viewHo
         }
 
     }
+
 
     private interface onItemClickListener {
 
