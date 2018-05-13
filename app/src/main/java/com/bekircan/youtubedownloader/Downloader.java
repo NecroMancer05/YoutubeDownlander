@@ -1,4 +1,4 @@
-package com.bekircan.youtubedownlander;
+package com.bekircan.youtubedownloader;
 
 import android.os.Environment;
 import android.util.Log;
@@ -26,11 +26,12 @@ public class Downloader extends Thread implements Runnable{
     private downloadItem downloadItem;
 
     private boolean running = true;
-    private boolean paused = false;
+    private boolean paused ;
     private boolean idUpdate = false;
 
-    public Downloader(downloadItem downloadItem, int index, downloadListener downloadListener) {
+    public Downloader(downloadItem downloadItem, int index, downloadListener downloadListener, boolean paused) {
         this.downloadItem = downloadItem;
+        this.paused = paused;
         this.index = index;
         this.downloadListener = downloadListener;
     }
@@ -44,8 +45,19 @@ public class Downloader extends Thread implements Runnable{
         running = false;
     }
 
+
+    //TODO something wrong on pause !
     public void pauseResume(){
 
+        if(paused){
+            synchronized (downloadItem){
+                paused = false;
+                downloadItem.notify();
+            }
+        }else {
+            paused = true;
+        }
+        /*
         if (!paused){
             paused = true;
         }else {
@@ -54,6 +66,7 @@ public class Downloader extends Thread implements Runnable{
                 downloadItem.notify();
             }
         }
+        */
     }
 
     public void updateID(int id){
@@ -168,6 +181,7 @@ public class Downloader extends Thread implements Runnable{
                         }
                         */
 
+                        /*
                         fileOutputStream.write(buffer,0,len);
                         total += len;
                         downloadListener.updateProgress(downloadItem.getId(), (total*100)/length);
@@ -176,8 +190,20 @@ public class Downloader extends Thread implements Runnable{
                         //downloadItems.get(index).setDownStatus((total*100)/length);
 
                         if ((total * 100)/length == 100){
-                            downloadListener.isFinish(index);
+                            downloadListener.isFinish(downloadItem.getId());
                         }
+                        */
+                    }
+
+                    fileOutputStream.write(buffer,0,len);
+                    total += len;
+                    downloadListener.updateProgress(downloadItem.getId(), (total*100)/length);
+                    downloadItem.setDownStatus((total*100)/length);
+
+                    //downloadItems.get(index).setDownStatus((total*100)/length);
+
+                    if ((total * 100)/length == 100){
+                        downloadListener.isFinish(downloadItem.getId());
                     }
 
                 }

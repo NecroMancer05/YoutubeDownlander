@@ -1,4 +1,4 @@
-package com.bekircan.youtubedownlander;
+package com.bekircan.youtubedownloader;
 
 
 import com.google.gson.annotations.Expose;
@@ -28,11 +28,13 @@ public class downloadItem {
     private String downPath;
 
     private boolean isPaused;
+    private notifyDownload notifyDownload;
 
     //TODO downloader causes overflow is there any loop ?
     private Downloader downloader;
 
     public downloadItem(int id, long downStatus, String fileUrl, String fileSize, String fileType, String fileQuality, String downPath, boolean isPaused, downloadListener downloadListener) {
+
         this.id = id;
         this.downStatus = downStatus;
         this.FileUrl = fileUrl;
@@ -136,7 +138,7 @@ public class downloadItem {
     }
 
     public void downStart(){
-        downloader = new Downloader(this, id, downloadListener);
+        downloader = new Downloader(this, id, downloadListener, false);
         downloader.start();
     }
 

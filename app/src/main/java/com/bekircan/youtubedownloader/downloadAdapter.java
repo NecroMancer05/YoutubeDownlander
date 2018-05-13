@@ -1,4 +1,4 @@
-package com.bekircan.youtubedownlander;
+package com.bekircan.youtubedownloader;
 
 import android.os.Build;
 import android.support.annotation.NonNull;
@@ -92,12 +92,17 @@ public class downloadAdapter extends RecyclerView.Adapter<downloadAdapter.viewHo
             @Override
             public void onStop(int position) {
 
+                if (!downloadItems.get(position).isPaused()){
+                    downloadItems.get(position).stop();
+                }
+                /*
                 if (downloadItems.get(position).getDownStatus() != 100){
                     downloadItems.get(position).stop();
                     onDelete(position);
                 }else {
                    onRemove(position);
                 }
+                */
             }
 
         });
@@ -134,7 +139,7 @@ public class downloadAdapter extends RecyclerView.Adapter<downloadAdapter.viewHo
     }
 
 
-    public class viewHolder extends RecyclerView.ViewHolder implements MenuItem.OnMenuItemClickListener, View.OnCreateContextMenuListener{
+    public class viewHolder extends RecyclerView.ViewHolder implements MenuItem.OnMenuItemClickListener, View.OnCreateContextMenuListener, View.OnClickListener{
 
 
         private onItemClickListener mListener;
@@ -193,18 +198,20 @@ public class downloadAdapter extends RecyclerView.Adapter<downloadAdapter.viewHo
             return false;
         }
 
-        /*
+
+        //TODO click to open file
         @Override
         public void onClick(View v) {
 
             if(mListener !=null){
                 int position = getAdapterPosition();
                 if(position != RecyclerView.NO_POSITION){
-                    mListener.onDelete(position);
+
+                    Log.d("on Click listener", "pos : " + position + " uri : " + downloadItems.get(position).getFilePath());
                 }
             }
         }
-        */
+
 
         @RequiresApi(api = Build.VERSION_CODES.JELLY_BEAN_MR2)
         @Override

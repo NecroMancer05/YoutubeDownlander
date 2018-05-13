@@ -1,4 +1,4 @@
-package com.bekircan.youtubedownlander;
+package com.bekircan.youtubedownloader;
 
 import org.junit.Test;
 

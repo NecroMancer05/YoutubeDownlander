@@ -1,4 +1,4 @@
-package com.bekircan.youtubedownlander;
+package com.bekircan.youtubedownloader;
 
 import android.content.Intent;
 import android.support.design.widget.FloatingActionButton;
@@ -56,7 +56,7 @@ public class MainActivity extends AppCompatActivity {
 
 
 
-        //Sending Action (Recive)
+        //Sending Action (Receive)
         Intent intent = getIntent();
         String action = intent.getAction();
         String intentString = intent.getType();
@@ -70,6 +70,13 @@ public class MainActivity extends AppCompatActivity {
         }
 
     }
+
+    @Override
+    public void onBackPressed() {
+        //super.onBackPressed();
+        Toast.makeText(this, "Go menu and exit for close the app.", Toast.LENGTH_SHORT).show();
+    }
+
     //Recive handler
     void handleSendText(Intent intent) {
         String sharedText = intent.getStringExtra(Intent.EXTRA_TEXT);

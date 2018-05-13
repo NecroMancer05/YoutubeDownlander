@@ -1,4 +1,4 @@
-package com.bekircan.youtubedownlander;
+package com.bekircan.youtubedownloader;
 
 import android.Manifest;
 import android.app.AlertDialog;
@@ -37,13 +37,11 @@ import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-import com.google.gson.reflect.TypeToken;
-
-import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.List;
+
+//import static com.bekircan.youtubedownlander.downloaderService.downloadItems;
+//import static com.bekircan.youtubedownlander.downloaderService.indexCounter;
 
 
 public class infoFragment extends android.support.v4.app.Fragment implements pathDialog.getPathListener{
@@ -112,7 +110,11 @@ public class infoFragment extends android.support.v4.app.Fragment implements pat
     private ProgressDialog progressDialog;
 
     private ArrayList<downloadLinks> downloadLinks = new ArrayList<>();
+
+    //TODO service with import static com.bekircan.youtubedownlander.infoFragment.downloadItems; lul
     private static ArrayList<downloadItem> downloadItems = new ArrayList<>();
+    private static ArrayList<notifyDownload> notifyDownloads = new ArrayList<>();
+
     private static ArrayList<Downloader> downloaders = new ArrayList<>();
     private ArrayAdapter<String> dialogAdapter;
 
@@ -132,6 +134,7 @@ public class infoFragment extends android.support.v4.app.Fragment implements pat
     private ImageView imageView;
 
 
+
     @Nullable
     @Override
     public View onCreateView(LayoutInflater inflater, @Nullable ViewGroup container, Bundle savedInstanceState) {
@@ -139,6 +142,8 @@ public class infoFragment extends android.support.v4.app.Fragment implements pat
 
 
         loadData();
+
+        startService();
         //setHasOptionsMenu(true);
 
         //TODO https://stackoverflow.com/questions/13401632/android-app-crashed-on-screen-rotation-with-dialog-open
@@ -209,6 +214,20 @@ public class infoFragment extends android.support.v4.app.Fragment implements pat
 
         return view;
     }
+
+    private void startService() {
+
+        Intent serviceIntent = new Intent(getContext(), downloaderService.class);
+        getActivity().startService(serviceIntent);
+    }
+
+
+    private void stopService() {
+
+        Intent serviceIntent = new Intent(getContext(), downloaderService.class);
+        getActivity().stopService(serviceIntent);
+    }
+
 
     @Override
     public void onSaveInstanceState(@NonNull Bundle outState) {
@@ -559,6 +578,7 @@ public class infoFragment extends android.support.v4.app.Fragment implements pat
                         @Override
                         public void run() {
                             Log.d("updateProg","id: " + id + percent);
+                            notifyDownloads.get(id).updateNotify();
 
                             /*
                             adapter.updateList(pureDownloadList);
@@ -577,16 +597,21 @@ public class infoFragment extends android.support.v4.app.Fragment implements pat
             }
 
             @Override
-            public void isFinish(int id) {
+            public void isFinish(final int id) {
 
                 getBarStats();
+                //notifyDownloads.get(id).finishNotify();
 
-                getActivity().runOnUiThread(new Runnable() {
-                    @Override
-                    public void run() {
-                        updateDownStats();
-                    }
-                });
+                if (getActivity() != null){
+
+                    getActivity().runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+
+                            updateDownStats();
+                        }
+                    });
+                }
             }
         };
 
@@ -597,25 +622,27 @@ public class infoFragment extends android.support.v4.app.Fragment implements pat
 
                 indexCounter--;
 
-                getActivity().runOnUiThread(new Runnable() {
-                    @Override
-                    public void run() {
+                if (getActivity() != null){
 
-                        if (indexCounter == 0){
-                            statsText.setText("");
+                    getActivity().runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+
+                            if (indexCounter == 0){
+                                statsText.setText("");
+                            }
+
+                            //updateIDs();
+                            getBarStats();
+                            updateDownStats();
+                            downloadAdapter.updateDelteListener(itemDeleted);
+
+                            //downloadAdapter = new downloadAdapter(downloadItems, itemDeleted);
+                            //downloadAdapter.notifyDataSetChanged();
                         }
+                    });
 
-                        //updateIDs();
-                        getBarStats();
-                        updateDownStats();
-                        downloadAdapter.updateDelteListener(itemDeleted);
-
-                        //downloadAdapter = new downloadAdapter(downloadItems, itemDeleted);
-                        //downloadAdapter.notifyDataSetChanged();
-                    }
-                });
-
-
+                }
 
             }
         };
@@ -630,6 +657,7 @@ public class infoFragment extends android.support.v4.app.Fragment implements pat
 
     }
 
+    //TODO need rework too :(
     private void getBarStats() {
 
         downloadingCounter = 0;
@@ -659,25 +687,38 @@ public class infoFragment extends android.support.v4.app.Fragment implements pat
         switch (item.getItemId()){
 
             case R.id.download_path:
-                pathDialog pathDialog = new pathDialog();
-                pathDialog.setTargetFragment(infoFragment.this, 1);
-                pathDialog.show(getActivity().getSupportFragmentManager().beginTransaction(), "path dialog");
-                pathDialog.setDownpath(downloadPath);
+                downloadLocationDialog();
                 return true;
 
             case R.id.downloads:
+                //TODO show downloaded items
                 Log.d("down", "menu");
                 return true;
 
             case R.id.info:
-                Log.d("info", "menu");
+                openAboutPage();
                 return true;
 
             case R.id.exit:
-                Log.d("exit" ,"menu");
+                stopService();
+                getActivity().finish();
         }
 
         return super.onContextItemSelected(item);
+    }
+
+    private void openAboutPage() {
+
+        Intent aboutIntent = new Intent(getActivity(), aboutActivity.class);
+        startActivity(aboutIntent);
+    }
+
+    private void downloadLocationDialog() {
+
+        pathDialog pathDialog = new pathDialog();
+        pathDialog.setTargetFragment(infoFragment.this, 1);
+        pathDialog.show(getActivity().getSupportFragmentManager().beginTransaction(), "path dialog");
+        pathDialog.setDownpath(downloadPath);
     }
 
     @Override
@@ -970,7 +1011,7 @@ public class infoFragment extends android.support.v4.app.Fragment implements pat
 
         //download select dialog
 
-        for (com.bekircan.youtubedownlander.downloadLinks links : downloadLinks){
+        for (com.bekircan.youtubedownloader.downloadLinks links : downloadLinks){
 
             if (downloadType){
                 dialogAdapter.add("As :\t" + links.getQuality() + "\t" + links.getSize());
@@ -997,10 +1038,18 @@ public class infoFragment extends android.support.v4.app.Fragment implements pat
             public void onClick(DialogInterface dialog, int which) {
 
 
+                //download item
                 downloadItems.add(new downloadItem(indexCounter, -1, downloadLinks.get(which).getUrl(), downloadLinks.get(which).getSize()
                         ,downloadLinks.get(which).getType(), downloadLinks.get(which).getQuality(), downloadPath, false, downloadListener));
 
                 downloadItems.get(indexCounter).downStart();
+
+                //notify
+                notifyDownloads.add(new notifyDownload(downloadItems.get(indexCounter), getContext(), true));
+                notifyDownloads.get(indexCounter).cretateNotify();
+                notifyDownloads.get(indexCounter).updateNotify();
+
+
 
 
                 /*
