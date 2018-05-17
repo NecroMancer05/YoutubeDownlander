@@ -16,6 +16,7 @@ import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.ProtocolException;
 import java.net.URL;
+import java.net.UnknownHostException;
 
 public class Downloader extends Thread implements Runnable{
 
@@ -45,15 +46,16 @@ public class Downloader extends Thread implements Runnable{
         running = false;
     }
 
-
-    //TODO something wrong on pause !
     public void pauseResume(){
 
-        if(paused){
+        if(downloadItem.isPaused()){
+
             synchronized (downloadItem){
+
                 paused = false;
                 downloadItem.notify();
             }
+
         }else {
             paused = true;
         }
@@ -90,6 +92,7 @@ public class Downloader extends Thread implements Runnable{
             HttpURLConnection httpURLConnection = (HttpURLConnection) url.openConnection();
             httpURLConnection.setRequestMethod("GET");
             httpURLConnection.setDoOutput(true);
+            Log.d("link", downloadItem.getFileUrl());
             httpURLConnection.connect();
 
             /*
@@ -120,7 +123,7 @@ public class Downloader extends Thread implements Runnable{
                 downloadItem.setFilePath(downloadDirectory + "/" + downloadItem.getDownPath() + "/" +fileName);
             }
 
-            Log.d("downpath", "custom down path" + downloadItem.getFilePath());
+            Log.d("downPath", "custom down path" + downloadItem.getFilePath());
 
 
 
@@ -195,6 +198,7 @@ public class Downloader extends Thread implements Runnable{
                         */
                     }
 
+
                     fileOutputStream.write(buffer,0,len);
                     total += len;
                     downloadListener.updateProgress(downloadItem.getId(), (total*100)/length);
@@ -210,19 +214,26 @@ public class Downloader extends Thread implements Runnable{
 
             }
 
+            //Close streams
             fileOutputStream.close();
             inputStream.close();
 
         } catch (FileNotFoundException e) {
             e.printStackTrace();
+            Log.d("Exception", "FileNotFound");
         } catch (ProtocolException e) {
             e.printStackTrace();
+            Log.d("Exception", "Protocol");
         } catch (MalformedURLException e) {
             e.printStackTrace();
+            Log.d("Exception", "UrlException");
         } catch (IOException e) {
             e.printStackTrace();
+            Log.d("Exception", "IO");
+            downloadItem.setError(true);
         } catch (InterruptedException e) {
             e.printStackTrace();
+            Log.d("Exception", "Interrupt");
         }
 
     }

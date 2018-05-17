@@ -1,28 +1,20 @@
 package com.bekircan.youtubedownloader;
 
 import android.content.Intent;
-import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
 import android.support.v7.app.AppCompatActivity;
-import android.support.v7.widget.Toolbar;
-
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
 import android.support.v4.app.FragmentPagerAdapter;
 import android.support.v4.view.ViewPager;
 import android.os.Bundle;
-import android.view.Menu;
-import android.view.MenuItem;
-import android.view.View;
 import android.widget.Toast;
 
-import java.util.ArrayList;
 
 
 public class MainActivity extends AppCompatActivity {
 
     private Bundle bundle;
-    public ArrayList<downloadItem> ıtems = new ArrayList<>();
 
     /**
      * The {@link android.support.v4.view.PagerAdapter} that will provide
@@ -56,8 +48,105 @@ public class MainActivity extends AppCompatActivity {
 
 
 
+        /*
+        //TODO something wrong in this !
         //Sending Action (Receive)
         Intent intent = getIntent();
+        //intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+        String action = intent.getAction();
+        String intentString = intent.getType();
+        //Get links from another app
+        if (Intent.ACTION_SEND.equals(action) && intentString != null) {
+            if ("text/plain".equals(intentString)) {
+                handleSendText(intent); // Handle text being sent
+                Toast.makeText(this, "inner if", Toast.LENGTH_SHORT).show();
+            }else{
+                Toast.makeText(this, "Share from youtube !", Toast.LENGTH_SHORT).show();
+                Toast.makeText(this, "inner else", Toast.LENGTH_SHORT).show();
+            }
+        }else {
+            Toast.makeText(this, "if else", Toast.LENGTH_SHORT).show();
+        }
+        */
+
+    }
+
+    /*
+    private void getLink() {
+
+        Toast.makeText(this, "gteLink", Toast.LENGTH_SHORT).show();
+
+        //need to gteIntent so we cant
+        //Sending Action (Receive)
+        Intent intent = getIntent();
+        //intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+        String action = intent.getAction();
+        String intentString = intent.getType();
+        //Get links from another app
+        if (Intent.ACTION_SEND.equals(action) && intentString != null) {
+            if ("text/plain".equals(intentString)) {
+                handleSendText(intent); // Handle text being sent
+                Toast.makeText(this, "inner if", Toast.LENGTH_SHORT).show();
+            }else{
+                Toast.makeText(this, "Share from youtube !", Toast.LENGTH_SHORT).show();
+            }
+        }else {
+            Toast.makeText(this, "if else", Toast.LENGTH_SHORT).show();
+        }
+    }
+    */
+
+
+    @Override
+    protected void onStart() {
+        super.onStart();
+
+        //Sending Action (Receive)
+        Intent intent = getIntent();
+        //intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+        String action = intent.getAction();
+        String intentString = intent.getType();
+        //Get links from another app
+        if (Intent.ACTION_SEND.equals(action) && intentString != null) {
+            if ("text/plain".equals(intentString)) {
+                handleSendText(intent); // Handle text being sent
+            }else{
+                Toast.makeText(this, "Share from youtube !", Toast.LENGTH_SHORT).show();
+            }
+        }
+    }
+
+
+    /*
+    @Override
+    protected void onResume() {
+        super.onResume();
+
+        //Sending Action (Receive)
+        Intent intent = getIntent();
+        //intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+        String action = intent.getAction();
+        String intentString = intent.getType();
+        //Get links from another app
+        if (Intent.ACTION_SEND.equals(action) && intentString != null) {
+            if ("text/plain".equals(intentString)) {
+                handleSendText(intent); // Handle text being sent
+            }else{
+                Toast.makeText(this, "Share from youtube !", Toast.LENGTH_SHORT).show();
+            }
+        }
+    }
+    */
+
+
+    /*
+    @Override
+    protected void onStart() {
+        super.onStart();
+
+        //Sending Action (Receive)
+        Intent intent = getIntent();
+        //intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
         String action = intent.getAction();
         String intentString = intent.getType();
         //Get links from another app
@@ -69,12 +158,18 @@ public class MainActivity extends AppCompatActivity {
             }
         }
 
+        mSectionsPagerAdapter = new SectionsPagerAdapter(getSupportFragmentManager());
+
+        mViewPager = (ViewPager) findViewById(R.id.container);
+        mViewPager.setAdapter(mSectionsPagerAdapter);
     }
+    */
+
 
     @Override
     public void onBackPressed() {
         //super.onBackPressed();
-        Toast.makeText(this, "Go menu and exit for close the app.", Toast.LENGTH_SHORT).show();
+        Toast.makeText(this, "Go menu and press exit for close the app.", Toast.LENGTH_SHORT).show();
     }
 
     //Recive handler

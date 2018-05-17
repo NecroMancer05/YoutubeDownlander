@@ -1,6 +1,7 @@
 package com.bekircan.youtubedownloader;
 
 import android.Manifest;
+import android.app.ActivityManager;
 import android.app.AlertDialog;
 import android.app.ProgressDialog;
 import android.content.Context;
@@ -15,10 +16,10 @@ import android.provider.Settings;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.design.widget.FloatingActionButton;
+import android.support.design.widget.Snackbar;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.util.Log;
-import android.view.ContextMenu;
 import android.view.KeyEvent;
 import android.view.LayoutInflater;
 import android.view.MenuItem;
@@ -34,17 +35,22 @@ import android.webkit.WebViewClient;
 import android.widget.ArrayAdapter;
 import android.widget.EditText;
 import android.widget.ImageView;
+import android.widget.PopupMenu;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Timer;
+import java.util.TimerTask;
+
+import static android.content.Context.ACTIVITY_SERVICE;
 
 //import static com.bekircan.youtubedownlander.downloaderService.downloadItems;
 //import static com.bekircan.youtubedownlander.downloaderService.indexCounter;
 
 
-public class infoFragment extends android.support.v4.app.Fragment implements pathDialog.getPathListener{
+public class infoFragment extends android.support.v4.app.Fragment implements pathDialog.getPathListener, PopupMenu.OnMenuItemClickListener{
 
     private static final String LINK_HEAD = "&index=";
     private static final String LINK_HEAD2 = "&list=";
@@ -80,6 +86,8 @@ public class infoFragment extends android.support.v4.app.Fragment implements pat
     private static final String DOWNLOADED_TEXT = "\t\tDonwloaded : ";
     private static final String DOWNLOADING_TEXT = "\t\t\tDownloading : ";
 
+    private static final int SERVICE_DELAY = 10000;
+
 
     private static int indexCounter = 0;
     private static int downloadedCounter = 0;
@@ -111,7 +119,7 @@ public class infoFragment extends android.support.v4.app.Fragment implements pat
 
     private ArrayList<downloadLinks> downloadLinks = new ArrayList<>();
 
-    //TODO service with import static com.bekircan.youtubedownlander.infoFragment.downloadItems; lul
+    //TODO service with import static com.bekircan.youtubedownlander.infoFragment.downloadItems; lul that look good idea but idk its bad
     private static ArrayList<downloadItem> downloadItems = new ArrayList<>();
     private static ArrayList<notifyDownload> notifyDownloads = new ArrayList<>();
 
@@ -127,29 +135,43 @@ public class infoFragment extends android.support.v4.app.Fragment implements pat
     private downloadAdapter downloadAdapter;
     private RecyclerView recyclerView;
     private LinearLayoutManager linearLayoutManager;
-    private adapter adapter;
+    //private adapter adapter;
 
     private myWebClient myWebClient;
 
     private ImageView imageView;
 
 
-
     @Nullable
     @Override
     public View onCreateView(LayoutInflater inflater, @Nullable ViewGroup container, Bundle savedInstanceState) {
-        View view = inflater.inflate(R.layout.info_fragment, container, false);
 
+        View view = inflater.inflate(R.layout.info_fragment, container, false);
 
         loadData();
 
-        startService();
+
+        if (!isServiceRunning()) {
+
+            new Timer().schedule(new TimerTask() {
+                @Override
+                public void run() {
+
+                   startService();
+                }
+            },SERVICE_DELAY);
+        }
+
+
+
         //setHasOptionsMenu(true);
 
         //TODO https://stackoverflow.com/questions/13401632/android-app-crashed-on-screen-rotation-with-dialog-open
         //setRetainInstance(true);
 
         //TODO add notification
+        //TODO do activities is stacking ! this causes the dont get shared link !
+        //TODO Intent.FLAG_ACTIVITY_CLEAR_TASK|Intent.FLAG_ACTIVITY_NEW_TASK
 
         linkEditText = view.findViewById(R.id.editText);
         downloadButton = view.findViewById(R.id.button_download);
@@ -157,18 +179,20 @@ public class infoFragment extends android.support.v4.app.Fragment implements pat
         imageView = view.findViewById(R.id.button_menu);
 
 
+        /*
         if(getArguments() != null) {
 
             sharedYtLink = getArguments().getString("sharedLink");
             linkEditText.setText(sharedYtLink);
         }
+        */
 
 
         recyclerView = view.findViewById(R.id.recyc);
         recyclerView.hasFixedSize();
         linearLayoutManager = new LinearLayoutManager(getContext());
         recyclerView.setLayoutManager(linearLayoutManager);
-        downloadAdapter = new downloadAdapter(downloadItems, itemDeleted);
+        downloadAdapter = new downloadAdapter(downloadItems, itemDeleted, getView());
         recyclerView.setAdapter(downloadAdapter);
 
         linkEditText.setOnEditorActionListener(getEditorListener);
@@ -178,11 +202,15 @@ public class infoFragment extends android.support.v4.app.Fragment implements pat
 
         checkPermission();
 
+        barStats();
+
+        /*
         if (indexCounter != 0){
 
-            getBarStats();
-            updateDownStats();
+            barStats();
+            //updateDownStats();
         }
+        */
 
 
         /*
@@ -215,17 +243,41 @@ public class infoFragment extends android.support.v4.app.Fragment implements pat
         return view;
     }
 
+
+    @Override
+    public void onStart() {
+        super.onStart();
+
+        //linkEditText = getView().findViewById(R.id.editText);
+        //linkEditText.setOnEditorActionListener(getEditorListener);
+
+        if(getArguments() != null) {
+
+            sharedYtLink = getArguments().getString("sharedLink");
+            linkEditText.setText(sharedYtLink);
+        }
+    }
+
+
     private void startService() {
 
-        Intent serviceIntent = new Intent(getContext(), downloaderService.class);
-        getActivity().startService(serviceIntent);
+        if (getActivity() != null) {
+
+            Intent serviceIntent = new Intent(getContext(), downloaderService.class);
+            getActivity().startService(serviceIntent);
+        }
     }
 
 
     private void stopService() {
 
-        Intent serviceIntent = new Intent(getContext(), downloaderService.class);
-        getActivity().stopService(serviceIntent);
+       if (getActivity() != null) {
+           Intent serviceIntent = new Intent(getContext(), downloaderService.class);
+           getActivity().stopService(serviceIntent);
+
+           //getActivity().finish();
+           getActivity().finishAffinity();
+       }
     }
 
 
@@ -236,6 +288,18 @@ public class infoFragment extends android.support.v4.app.Fragment implements pat
         saveData();
     }
 
+    private boolean isServiceRunning() {
+
+        if (getActivity() != null) {
+            ActivityManager manager = (ActivityManager) getActivity().getSystemService(ACTIVITY_SERVICE);
+            for (ActivityManager.RunningServiceInfo service : manager.getRunningServices(Integer.MAX_VALUE)){
+                if("com.bekircan.youtubedownloader.downloaderService".equals(service.service.getClassName())) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
 
     private void saveData() {
 
@@ -293,6 +357,7 @@ public class infoFragment extends android.support.v4.app.Fragment implements pat
         downloadPath = sharedPreferences.getString("download location", "");
 
     }
+
 
 
     private void updateDownStats(){
@@ -403,13 +468,16 @@ public class infoFragment extends android.support.v4.app.Fragment implements pat
             @Override
             public void onClick(View v) {
 
+                showMenu(v);
                 //v.showContextMenu();
+                /*
                 menuCounter++;
                 if (menuCounter % 2 == 0 ){
                     Toast.makeText(getContext(), "Long press for open menu", Toast.LENGTH_SHORT).show();
                 }
+                */
 
-                registerForContextMenu(v.findViewById(R.id.button_menu));
+                //registerForContextMenu(v.findViewById(R.id.button_menu));
 
                 /*
                 if (getActivity() != null){
@@ -577,8 +645,8 @@ public class infoFragment extends android.support.v4.app.Fragment implements pat
                     getActivity().runOnUiThread(new Runnable() {
                         @Override
                         public void run() {
-                            Log.d("updateProg","id: " + id + percent);
-                            notifyDownloads.get(id).updateNotify();
+                            Log.d("updateProgress","id: " + id + percent);
+                            //notifyDownloads.get(id).updateNotify();
 
                             /*
                             adapter.updateList(pureDownloadList);
@@ -599,8 +667,19 @@ public class infoFragment extends android.support.v4.app.Fragment implements pat
             @Override
             public void isFinish(final int id) {
 
-                getBarStats();
-                //notifyDownloads.get(id).finishNotify();
+                //TODO barStats not working correctly
+                downloadedCounter++;
+                downloadingCounter--;
+                barStats();
+                notifyDownloads.get(id).finishNotify();
+
+
+                /*
+                if (getView() != null) {
+
+                    Snackbar.make(getView(),downloadItems.get(id).getFileName() + "Finished", Snackbar.LENGTH_LONG).show();
+                }
+                */
 
                 if (getActivity() != null){
 
@@ -608,7 +687,8 @@ public class infoFragment extends android.support.v4.app.Fragment implements pat
                         @Override
                         public void run() {
 
-                            updateDownStats();
+                            //updateDownStats();
+                            Log.d("isFinish", "finish");
                         }
                     });
                 }
@@ -622,6 +702,12 @@ public class infoFragment extends android.support.v4.app.Fragment implements pat
 
                 indexCounter--;
 
+                if (downStat == 100) {
+                    downloadedCounter--;
+                }else {
+                    downloadingCounter--;
+                }
+
                 if (getActivity() != null){
 
                     getActivity().runOnUiThread(new Runnable() {
@@ -633,9 +719,9 @@ public class infoFragment extends android.support.v4.app.Fragment implements pat
                             }
 
                             //updateIDs();
-                            getBarStats();
-                            updateDownStats();
-                            downloadAdapter.updateDelteListener(itemDeleted);
+                            barStats();
+                            //updateDownStats();
+                            downloadAdapter.updateDeleteListener(itemDeleted);
 
                             //downloadAdapter = new downloadAdapter(downloadItems, itemDeleted);
                             //downloadAdapter.notifyDataSetChanged();
@@ -650,7 +736,7 @@ public class infoFragment extends android.support.v4.app.Fragment implements pat
 
         //Update prefs after rotate or re share
         updatePrefs();
-        downloadAdapter.updateDelteListener(itemDeleted);
+        downloadAdapter.updateDeleteListener(itemDeleted);
 
 
 
@@ -658,22 +744,29 @@ public class infoFragment extends android.support.v4.app.Fragment implements pat
     }
 
     //TODO need rework too :(
-    private void getBarStats() {
+    private void barStats() {
 
-        downloadingCounter = 0;
-        downloadedCounter = 0;
 
-        for (downloadItem item : downloadItems){
+        if (getActivity() != null) {
+           getActivity().runOnUiThread(new Runnable() {
+               @Override
+               public void run() {
+                   if (downloadedCounter != 0 || downloadingCounter != 0) {
 
-            if (item.getDownStatus() != 100){
-                downloadingCounter++;
-            }else {
-                downloadedCounter++;
-            }
+                       stat = DOWNLOADED_TEXT + downloadedCounter + DOWNLOADING_TEXT + downloadingCounter;
+                       statsText.setText(stat);
+                   }else {
+                       statsText.setText("");
+                   }
+               }
+           });
         }
     }
 
 
+
+    /*
+    //TODO context menu is useless do this https://stackoverflow.com/questions/30417223/how-to-add-menu-button-without-action-bar
     @Override
     public void onCreateContextMenu(ContextMenu menu, View v, ContextMenu.ContextMenuInfo menuInfo) {
         super.onCreateContextMenu(menu, v, menuInfo);
@@ -706,6 +799,42 @@ public class infoFragment extends android.support.v4.app.Fragment implements pat
 
         return super.onContextItemSelected(item);
     }
+    */
+
+    private void showMenu(View v){
+
+        PopupMenu popupMenu = new PopupMenu(getContext(), v);
+        popupMenu.setOnMenuItemClickListener(this);
+        //MenuInflater menuInflater = popupMenu.getMenuInflater();
+        //menuInflater.inflate(R.menu.menu_main, popupMenu.getMenu());
+        popupMenu.inflate(R.menu.menu_main);
+        popupMenu.show();
+    }
+
+    @Override
+    public boolean onMenuItemClick(MenuItem item) {
+        switch (item.getItemId()){
+
+            case R.id.download_path:
+                downloadLocationDialog();
+                return true;
+
+            case R.id.downloads:
+                //TODO show downloaded items
+                Log.d("down", "menu");
+                return true;
+
+            case R.id.info:
+                openAboutPage();
+                return true;
+
+            case R.id.exit:
+                stopService();
+        }
+
+        return false;
+    }
+
 
     private void openAboutPage() {
 
@@ -716,6 +845,7 @@ public class infoFragment extends android.support.v4.app.Fragment implements pat
     private void downloadLocationDialog() {
 
         pathDialog pathDialog = new pathDialog();
+        pathDialog.setCancelable(false);
         pathDialog.setTargetFragment(infoFragment.this, 1);
         pathDialog.show(getActivity().getSupportFragmentManager().beginTransaction(), "path dialog");
         pathDialog.setDownpath(downloadPath);
@@ -753,6 +883,7 @@ public class infoFragment extends android.support.v4.app.Fragment implements pat
 
             builder = new AlertDialog.Builder(getContext());
             builder.setTitle("Permission Need");
+            builder.setMessage("This app not work without permission");
             builder.setCancelable(false);
             builder.setPositiveButton("Go app settings", new DialogInterface.OnClickListener() {
                 @Override
@@ -761,17 +892,19 @@ public class infoFragment extends android.support.v4.app.Fragment implements pat
                     intent.setAction(Settings.ACTION_APPLICATION_DETAILS_SETTINGS);
                     Uri uri = Uri.fromParts("package", getActivity().getPackageName(), null);
                     intent.setData(uri);
-                    //getContext().startActivity(ıntent);
+                    //getContext().startActivity(intent);
                     getActivity().startActivity(intent);
                 }
             });
 
+            /*
             builder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
                 @Override
                 public void onClick(DialogInterface dialog, int which) {
                     Toast.makeText(getContext(), "This app not work without permissions", Toast.LENGTH_SHORT).show();
                 }
             });
+            */
             builder.show();
             /*
             Intent intent = new Intent();
@@ -850,6 +983,8 @@ public class infoFragment extends android.support.v4.app.Fragment implements pat
         downloadPath = path;
     }
 
+
+
     public class myWebClient extends WebViewClient{
 
         @Override
@@ -858,13 +993,13 @@ public class infoFragment extends android.support.v4.app.Fragment implements pat
             view.loadUrl("javascript:window.HTMLOUT.showHTML('<html>'+document.getElementsByTagName('html')[0].innerHTML+'</html>');");
         }
 
-        /*
+
         @Override
         public void onPageFinished(WebView view, String url) {
             super.onPageFinished(view, url);
             view.loadUrl("javascript:window.HTMLOUT.showHTML('<html>'+document.getElementsByTagName('html')[0].innerHTML+'</html>');");
         }
-        */
+
     }
 
 
@@ -879,9 +1014,9 @@ public class infoFragment extends android.support.v4.app.Fragment implements pat
                 html_data = html_data.replace(scriptText, "");
             }
 
-            if (!html_data.equals(old) && html_data.length() > 2300){
+            if (!html_data.equals(old) && html_data.length() > 4500){
 
-                Log.i("showhtml", " ======>  HTML Data OK : " + html_data);
+                Log.i("showhtml", " ======>  HTML Data OK : " + html_data.length());
                 htmlData = html_data;
                 dataOK = true;
                 old = html_data;
@@ -967,6 +1102,7 @@ public class infoFragment extends android.support.v4.app.Fragment implements pat
 
     private void openDialog() {
 
+        //TODO Window manager error when view destroyed
         if (dialogOpen) {
             progressDialog = new ProgressDialog(getContext());
             //dialog.setTitle("Getting Links");
@@ -981,6 +1117,7 @@ public class infoFragment extends android.support.v4.app.Fragment implements pat
     public void parseLinks(String getHtml){
 
         //true for mp3 false for videos;
+
 
         dialogAdapter = new ArrayAdapter<>(getContext(), android.R.layout.simple_list_item_1);
 
@@ -1014,9 +1151,9 @@ public class infoFragment extends android.support.v4.app.Fragment implements pat
         for (com.bekircan.youtubedownloader.downloadLinks links : downloadLinks){
 
             if (downloadType){
-                dialogAdapter.add("As :\t" + links.getQuality() + "\t" + links.getSize());
+                dialogAdapter.add("As :\t\t" + links.getQuality() + "\t\t" + links.getSize());
             }else {
-                dialogAdapter.add("As :\t" + links.getType() + "\t" + links.getQuality() + "\t" + links.getSize());
+                dialogAdapter.add("As :\t\t" + links.getType() + "\t\t" + links.getQuality() + "\t\t" + links.getSize());
             }
         }
 
@@ -1024,6 +1161,7 @@ public class infoFragment extends android.support.v4.app.Fragment implements pat
         listBuilder = new AlertDialog.Builder(getActivity());
         listBuilder.setTitle("Download :  ");
         listBuilder.setCancelable(false);
+
         listBuilder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialog, int which) {
@@ -1046,8 +1184,8 @@ public class infoFragment extends android.support.v4.app.Fragment implements pat
 
                 //notify
                 notifyDownloads.add(new notifyDownload(downloadItems.get(indexCounter), getContext(), true));
-                notifyDownloads.get(indexCounter).cretateNotify();
-                notifyDownloads.get(indexCounter).updateNotify();
+                notifyDownloads.get(indexCounter).createNotify();
+                //notifyDownloads.get(indexCounter).updateNotify();
 
 
 
@@ -1076,15 +1214,25 @@ public class infoFragment extends android.support.v4.app.Fragment implements pat
                 downloadLinks.clear();
                 dialog.dismiss();
 
-                getBarStats();
-                updateDownStats();
+
+                downloadingCounter++;
+                //updateDownStats();
+                barStats();
                 linkEditText.setText("");
+
+                if (!isServiceRunning()) {
+
+                    startService();
+                }
+
+
 
             }
         });
 
 
         listBuilder.show();
+
 
         /*
         adapter = new adapter(pureDownloadList);
@@ -1093,13 +1241,14 @@ public class infoFragment extends android.support.v4.app.Fragment implements pat
         */
 
 
-        downloadAdapter = new downloadAdapter(downloadItems, itemDeleted);
+        downloadAdapter = new downloadAdapter(downloadItems, itemDeleted, getView());
         recyclerView.setAdapter(downloadAdapter);
         downloadAdapter.notifyDataSetChanged();
 
         //downloaders.add(new Downloader(downloadItems,indexCounter, downloadListener));
 
     }
+
 
 
 

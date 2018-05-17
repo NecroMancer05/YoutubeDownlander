@@ -28,6 +28,9 @@ public class downloadItem {
     private String downPath;
 
     private boolean isPaused;
+    private boolean isStopped;
+    private boolean isError;
+
     private notifyDownload notifyDownload;
 
     //TODO downloader causes overflow is there any loop ?
@@ -44,6 +47,23 @@ public class downloadItem {
         this.downPath = downPath;
         this.isPaused = isPaused;
         this.downloadListener = downloadListener;
+    }
+
+
+    public boolean isError() {
+        return isError;
+    }
+
+    public void setError(boolean error) {
+        isError = error;
+    }
+
+    public boolean isStopped() {
+        return isStopped;
+    }
+
+    public void setStopped(boolean stopped) {
+        isStopped = stopped;
     }
 
     public boolean isPaused() {
@@ -148,6 +168,7 @@ public class downloadItem {
 
     public void stop(){
         downloader.stopDownload();
+        setStopped(true);
     }
 
     public void pause(){
